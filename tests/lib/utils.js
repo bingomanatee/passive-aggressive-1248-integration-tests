@@ -92,6 +92,43 @@ var utils = {
         }
     },
 
+    getText: function(browser, selector, timeout, done){
+        if (_.isFunction(timeout)) {
+            done = timeout;
+            timeout = DEFAULT_WAIT_TIME;
+        }
+
+        if (!timeout) {
+            timeout = DEFAULT_WAIT_TIME;
+        }
+        if (done){
+            utils.getCSS(browser, selector,timeout, function(err, element){
+                if (err){
+                    done(err);
+                } else {
+                    browser.text(element, done);
+                }
+            });
+        } else {
+            var derferred = Q.defer();
+
+            utils.getCSS(browser, selector, timeout)
+                .then(function(element){
+                    browser.text(element, function(err, text){
+                        if (err){
+                            derferred.reject(err);
+                        } else {
+                            derferred.resolve(text);
+                        }
+                    })
+                }, function(err){
+                    derferred.reject(err);
+                });
+
+            return derferred.promise;
+        }
+    },
+
     getCSS: function (browser, selector, timeout, done) {
         if (_.isFunction(timeout)) {
             done = timeout;
