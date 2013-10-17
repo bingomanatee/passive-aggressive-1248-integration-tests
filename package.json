@@ -1,23 +1,27 @@
 {
-    "name": "passive-aggressive-1248-integration-tests",
-    "private": true,
-    "version": "0.0.1",
-    "description": "integration tests for git@github.com:bingomanatee/passive-aggressive-1248",
-    "main": "index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/bingomanatee/passive-aggressive-1248-integration-tests.git"
-    },
-    "keywords": [
-        "selenium",
-        "passive-agressive-1248"
-    ],
-    "author": "Dave Edelhart",
-    "license": "BSD",
-    "bugs": {
-        "url": "https://github.com/bingomanatee/passive-aggressive-1248-integration-tests/issues"
-    }
+  "name": "passive-aggressive-1248-integration-tests",
+  "private": true,
+  "version": "0.0.1",
+  "description": "integration tests for git@github.com:bingomanatee/passive-aggressive-1248",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bingomanatee/passive-aggressive-1248-integration-tests.git"
+  },
+  "keywords": [
+    "selenium",
+    "passive-agressive-1248"
+  ],
+  "author": "Dave Edelhart",
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/bingomanatee/passive-aggressive-1248-integration-tests/issues"
+  },
+  "dependencies": {
+    "underscore": "~1.5.2",
+    "q": "~0.9.7"
+  }
 }
