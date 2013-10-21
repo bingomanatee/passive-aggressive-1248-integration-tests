@@ -92,7 +92,7 @@ var utils = {
         }
     },
 
-    getText: function(browser, selector, timeout, done){
+    getText: function (browser, selector, timeout, done) {
         if (_.isFunction(timeout)) {
             done = timeout;
             timeout = DEFAULT_WAIT_TIME;
@@ -101,9 +101,9 @@ var utils = {
         if (!timeout) {
             timeout = DEFAULT_WAIT_TIME;
         }
-        if (done){
-            utils.getCSS(browser, selector,timeout, function(err, element){
-                if (err){
+        if (done) {
+            utils.getCSS(browser, selector, timeout, function (err, element) {
+                if (err) {
                     done(err);
                 } else {
                     browser.text(element, done);
@@ -113,20 +113,70 @@ var utils = {
             var derferred = Q.defer();
 
             utils.getCSS(browser, selector, timeout)
-                .then(function(element){
-                    browser.text(element, function(err, text){
-                        if (err){
+                .then(function (element) {
+                    browser.text(element, function (err, text) {
+                        if (err) {
                             derferred.reject(err);
                         } else {
                             derferred.resolve(text);
                         }
                     })
-                }, function(err){
+                }, function (err) {
                     derferred.reject(err);
                 });
 
             return derferred.promise;
         }
+    },
+
+    getAttribute: function (browser, selector, attr, timeout, done) {
+
+        if (done) {
+            model.getCSS(browser, selector, timeout)
+                .then(function (element) {
+                    if (element) {
+                        try {
+                            browser.getAttribute(element, attr, done)
+                        } catch (err) {
+                            done(err);
+                        }
+
+                    } else {
+                        done(new Error('cannot find element ' + selector));
+                    }
+                },
+                function (err) {
+                    done(err);
+                }
+            );
+        } else {
+            var deferred = Q.defer();
+            utils.getCSS(browser, selector, timeout)
+                .then(function (element) {
+                    if (element) {
+                        try {
+                            browser.getAttribute(element, attr, function(err, value){
+                                if (err){
+                                    deferred.reject(err);
+                                } else {
+                                    deferred.resolve(value);
+                                }
+                            });
+                        } catch (err) {
+                           deferred.reject(err);
+                        }
+
+                    } else {
+                        deferred.reject(new Error('cannot find element ' + selector));
+                    }
+                },
+                function (err) {
+                    done(err);
+                }
+            );
+            return deferred.promise;
+        }
+
     },
 
     getCSS: function (browser, selector, timeout, done) {

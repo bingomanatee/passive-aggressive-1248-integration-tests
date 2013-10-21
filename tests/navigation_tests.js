@@ -6,6 +6,8 @@ var tap = require('tap');
 var wd = require('wd');
 var utils = require('./lib/utils');
 
+var URL = 'http://passive-agressive-1248.herokuapp.com/';
+
 tap.test('navigation', {timeout: 1000 * 200, skip: false }, function (suite) {
 
     suite.test('home page', {timeout: 1000 * 100, skip: false }, function (hp_test) {
@@ -24,7 +26,7 @@ tap.test('navigation', {timeout: 1000 * 200, skip: false }, function (suite) {
         browser.init({
             browserName: 'chrome', tags: ["examples"], name: "navigation"
         }, function () {
-            browser.get("http://passive-agressive-1248.herokuapp.com/", function () {
+            browser.get(URL, function () {
                 setTimeout(function () {
                     browser.title(function (err, title) {
                         console.log('result of title: %s, %s', err, title);
@@ -94,7 +96,7 @@ tap.test('navigation', {timeout: 1000 * 200, skip: false }, function (suite) {
         browser.init({
             browserName: 'chrome', tags: ["examples"], name: "navigation"
         }, function () {
-            browser.get("http://passive-agressive-1248.herokuapp.com/", function () {
+            browser.get(URL, function () {
                 setTimeout(function () {
                     utils.visible(browser, 'button.all-locations')
                         .then(function (visible) {

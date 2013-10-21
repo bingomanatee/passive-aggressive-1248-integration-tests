@@ -3,10 +3,14 @@ var util = require('util');
 var path = require('path');
 var fs = require('fs');
 var tap = require('tap');
+var wd = require('wd');
+var utils = require('./lib/utils');
 
 var ROOT_URL = 'http://localhost:5000';
 var request = require('request');
 var async = require('async');
+
+var URL = 'http://localhost:5000';
 
 var _events_mock_url_template = _.template('<%= root %>/rest/event?category=movie&zip=<%= zip %>&mock=<%= mock %>');
 var _event_mock_url_template = _.template('<%= root %>/rest/event/<%= encodeURIComponent(id) %>?category=movie&zip=<%= zip %>&mock=<%= mock %>');
@@ -57,7 +61,7 @@ function _boolify(data){
 
 tap.test('events', {timeout: 1000 * 100, skip: false }, function (suite) {
 
-    suite.test('events tests', {timeout: 1000 * 100, skip: false }, function (es_test) {
+    suite.test('events tests', {timeout: 1000 * 100, skip: true }, function (es_test) {
 
         var url = _events_url(10001);
         console.log('url: %s', url);
@@ -154,9 +158,42 @@ tap.test('events', {timeout: 1000 * 100, skip: false }, function (suite) {
     });
 
 
-    suite.test('event tests', {timeout: 1000 * 10, skip: false }, function (e_test) {
+    suite.test('mock data test', {timeout: 1000 * 10, skip: false }, function (e_test) {
+        var browser = wd.remote();
 
-        e_test.end();
+        function _abort(err) {
+            browser.quit(function () {
+                if (err) {
+                    console.log('error: ', err);
+                    hp_test.error(err);
+                }
+                hp_test.end();
+            });
+        }
+
+        browser.init({
+            browserName: 'chrome', tags: ["examples"], name: "navigation"
+        }, function () {
+            browser.get(URL + "/events/view/movie/10001?mock=handmade_data", function () {
+                setTimeout(function () {
+                    browser.title(function (err, title) {
+                        console.log('result of title: %s, %s', err, title);
+                        e_test.equal(title, 'PA: movie: 10001', 'title is equal');
+
+                        return utils.getAttribute(browser, '.event-toggle-open', 'data-id')
+                            .then(function(value){
+                               e_test.equal(value, 'mockid10001', 'has mock id');
+
+                            })
+                            .then(function () {
+                                browser.quit(function () {
+                                    e_test.end();
+                                });
+                            })
+                    });
+                }, 3000); // give Angular some time to format template
+            });
+        });
     });
 
     suite.end();
