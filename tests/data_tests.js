@@ -6,168 +6,40 @@ var tap = require('tap');
 var wd = require('wd');
 var utils = require('./lib/utils');
 
-var ROOT_URL = 'http://localhost:5000';
 var request = require('request');
 var async = require('async');
 
 var URL = 'http://localhost:5000';
+var LIVE_URL = 'http://passive-agressive-1248.herokuapp.com/';
 
-var _events_mock_url_template = _.template('<%= root %>/rest/event?category=movie&zip=<%= zip %>&mock=<%= mock %>');
-var _event_mock_url_template = _.template('<%= root %>/rest/event/<%= encodeURIComponent(id) %>?category=movie&zip=<%= zip %>&mock=<%= mock %>');
 var _events_url_template = _.template('<%= root %>/rest/event?category=movie&zip=<%= zip %>');
 var _event_url_template = _.template('<%= root %>/rest/event/<%= encodeURIComponent(id) %>?category=movie&zip=<%= zip %>');
-var _events_url_put_template = _.template('<%= root %>/rest/event');
 
-function _event_mock_url(mock, zip, id) {
-    return _event_mock_url_template({mock: mock, root: ROOT_URL, id: id, zip: zip});
-}
+var SF_ZIP = 94103;
 
-function _events_mock_url(mock, zip) {
-    return _events_mock_url_template({mock: mock, root: ROOT_URL, zip: zip});
-}
+var moment = require('moment');
+
 
 function _events_url(zip) {
-    return _events_url_template({ root: ROOT_URL, zip: zip});
+    return _events_url_template({ root: LIVE_URL, zip: zip});
 }
 
 function _event_url(zip, id) {
-    return _event_url_template({ root: ROOT_URL, zip: zip, id: id});
-}
-
-function _events_url_put(zip) {
-    return _events_url_put_template({ root: ROOT_URL, zip: zip});
-}
-
-function _boolify(data){
-    _.each(data, function(value, field){
-       if (value == 'false'){
-           data[field] = false;
-       } else if (value == 'true'){
-           data[field] = true;
-       } else if (_.isArray(value)) {
-           data[field] = value.map(_boolify);
-       } else if (_.isObject(value)){
-           data[field] = _.each(value, function(vv, ff){
-               data[field][ff] = _boolify(vv);
-           })
-       } else if (_.isNull(value)){
-           delete data[field];
-       }
-
-    });
-
-    return data;
+    return _event_url_template({ root: LIVE_URL, zip: zip, id: id});
 }
 
 tap.test('events', {timeout: 1000 * 100, skip: false }, function (suite) {
 
-    suite.test('events tests', {timeout: 1000 * 100, skip: true }, function (es_test) {
-
-        var url = _events_url(10001);
-        console.log('url: %s', url);
-
-        request.get(url, {}, function (err, res, body) {
-            console.log('events gotten: %s, %s, %s', err, res, body.substr(0, 50));
-            request.put(_events_url_put(10001), {form: {data: JSON.parse(body), zip: 10001, mock: 'mock_data'}},
-                function () {
-                    var mu = _events_mock_url('mock_data', 10001);
-                    console.log('mu: %s', mu);
-                    request.get(mu, {}, function (err, res, body) {
-                        console.log('body: %s', body.substr(0, 20));
-                        if (err) throw err;
-                        if (_.isString(body)) {
-                            body = JSON.parse(body);
-                        }
-
-                        console.log('gotten %s events', body.length);
-
-                        var event_data = {};
-
-                        var query = async.queue(function (event, done) {
-                            console.log('putting event %s', event.title);
-
-                            request.get(_event_url(10001, event.id), {}, function (err, res, body) {
-
-                                var bbody = body;
-                                if (_.isString(body)) {
-                                    try {
-                                        body = JSON.parse(body);
-                                    } catch (err) {
-                                        console.log('error parsing %s: %s', bbody, err);
-                                        return done();
-                                    }
-                                }
-
-                                event_data[event.id] = body;
-
-                                request.put(_events_url_put(10001), {form: {data: body, zip: 10001, id: encodeURIComponent(event.id), mock: 'mock_data'}}, function(err, res, body){
-
-                                    if (err){
-                                        console.log('error putting: %s', err);
-                                    } else {
-                                        done();
-                                    }
-
-                                });
-
-                            })
-
-                        });
-
-                        query.drain = function () {
-                            console.log('testing mock put data');
-                            var v = _.values(event_data).slice(0, 50);
-                            console.log('pushing %s events', v.length);
-
-                            var get_mock_queue = async.queue(function(event, done){
-
-                                request.get(_event_mock_url('mock_data', 10001, event.id), {}, function(err, res, body){
-                                    if (err){
-                                        return done(err);
-                                    }
-                                   if (_.isString(body)){
-                                       var bbody = body;
-                                     try {
-                                         body = JSON.parse(body);
-                                     } catch(err){
-                                         console.log('error parsing %s', bbody);
-                                         return done();
-                                     }
-                                   }
-                                    console.log('testing %s', event.id);
-
-                                    es_test.deepEqual(_boolify(body), _boolify(event_data[event.id], 'retrieved event ' + event.id));
-                                    done();
-                                });
-
-                            });
-
-                            get_mock_queue.drain = function(){
-                                es_test.end();
-                            };
-
-                            get_mock_queue.push(v);
-                        };
-
-                        query.push(body.slice(0, 50));
-                    });
-
-                })
-        })
-
-    });
-
-
-    suite.test('mock data test', {timeout: 1000 * 10, skip: false }, function (e_test) {
+    suite.test('mock data test', {timeout: 1000 * 10, skip: true }, function (e_test) {
         var browser = wd.remote();
 
         function _abort(err) {
             browser.quit(function () {
                 if (err) {
                     console.log('error: ', err);
-                    hp_test.error(err);
+                    e_test.error(err);
                 }
-                hp_test.end();
+                e_test.end();
             });
         }
 
@@ -181,20 +53,122 @@ tap.test('events', {timeout: 1000 * 100, skip: false }, function (suite) {
                         e_test.equal(title, 'PA: movie: 10001', 'title is equal');
 
                         return utils.getAttribute(browser, '.event-toggle-open', 'data-id')
-                            .then(function(value){
-                               e_test.equal(value, 'mockid10001', 'has mock id');
+                            .then(function (value) {
+                                e_test.equal(value, 'mockid10001', 'has mock id');
 
-                            })
+                            }, _abort)
                             .then(function () {
                                 browser.quit(function () {
                                     e_test.end();
                                 });
-                            })
+                            }, _abort)
                     });
                 }, 3000); // give Angular some time to format template
             });
         });
     });
+
+    /**
+     * testing live site. Checking times of first movie in listing.
+     * note we are running this test in SF, so no time zone slippage -- need a second set of tests for NYC
+     */
+
+    suite.test('testing real listings against REST data', {timeout: 1000 * 50, skip: false}, function (real_test) {
+
+        var browser = wd.remote();
+
+        function _abort(err) {
+            browser.quit(function () {
+                if (err) {
+                    console.log('error: ', err);
+                    real_test.error(err);
+                }
+                real_test.end();
+            });
+        }
+
+        function _done() {
+            browser.quit(function () {
+                real_test.end();
+            });
+        }
+
+        browser.init({
+            browserName: 'chrome', tags: ["examples"], name: "navigation"
+        }, function () {
+            /**
+             * getting the REST data for the movie lisitng in SF
+             */
+            request.get(_events_url(SF_ZIP), function (err, res, body) {
+                if (_.isString(body)) {
+                    body = JSON.parse(body);
+                }
+
+                real_test.ok(body.length > 0, 'have body length');
+                console.log('%s movies playing today', body.length);
+
+                var movie = body[0];
+                var button_css = 'button[data-id="' + movie.id + '"]';
+
+                browser.get(LIVE_URL + "/events/view/movie/" + SF_ZIP, function () {
+                    /**
+                     * validating that the first movie in the event REST is also on the page
+                     *
+                     */
+                    utils.getText(browser, button_css, function (err, text) {
+                        console.log('text of button: %s', util.inspect(text));
+                        real_test.equal(text, movie.title, 'found movie');
+
+                        /**
+                         * getting the REST data for the first movie
+                         */
+                        request.get(_event_url(SF_ZIP, movie.id), function (err, res, movie_data) {
+
+
+                            console.log('movie data: %s', util.inspect(movie_data));
+
+                            venue_data = JSON.parse(movie_data);
+
+                            utils.click(browser, button_css)
+                                .then(function () {
+                                    setTimeout(function () {
+                                        console.log('getting venue content');
+                                        var venue_css = 'div[data-id="event-' + venue_data.id + '-venue-' + venue_data.venue_id + '"]';
+                                        console.log('venue css: %s', venue_css);
+                                        utils.getText(browser, venue_css + ' h3')
+                                            .then(function (venue) {
+                                                real_test.equal(venue, venue_data.venue_name + ':', 'found venue name in h3');
+
+                                                var t = venue_data.times[0].start_time;
+                                                var movie_time = new moment(t);
+
+                                                console.log('looking for movie time %s based on %s', movie_time.format(), t);
+
+                                                var time_ele =  venue_css
+                                                    + ' time[data-date="' + movie_time.format('MM.DD') + '"]';
+                                                console.log('time ele: %s', time_ele);
+                                                utils.getText(browser, time_ele)
+                                                    .then(function (text) {
+                                                        var tt = movie_time.format('hh:mm');
+                                                        console.log('searching for ', tt, 'in time', text);
+                                                        real_test.ok(text.search(tt) >= 0, 'can find a time in the times list');
+
+                                                        _done();
+                                                    }, _abort);
+
+                                            }, _abort);
+
+                                    }, 5000);
+                                })
+
+                        });
+                    });
+                });
+            })
+        });
+
+    });
+
 
     suite.end();
 

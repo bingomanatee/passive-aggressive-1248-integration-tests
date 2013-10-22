@@ -29,7 +29,6 @@ tap.test('navigation', {timeout: 1000 * 200, skip: false }, function (suite) {
             browser.get(URL, function () {
                 setTimeout(function () {
                     browser.title(function (err, title) {
-                        console.log('result of title: %s, %s', err, title);
                         hp_test.equal(title, 'Passive Aggressive 1248', 'title is equal');
 
                         utils.visible(browser, 'button.all-locations')
